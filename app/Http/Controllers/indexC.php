@@ -54,6 +54,8 @@ class indexC extends Controller
         $kepadatanpenduduk = nilaiM::select('idnilai','ket')
         ->where('idkriteria', 6)->get();
 
+        $kriteria = kriteriaM::orderBy('ket', 'DESC')->get();
+        
 
         return view('pages.pagesindex', [
             'instansi' => $instansi,
@@ -63,21 +65,34 @@ class indexC extends Controller
             'spesifikasirumah' => $spesifikasirumah,
             'kepadatanpenduduk' => $kepadatanpenduduk,
             'open' => $open,
+            'kriteria' => $kriteria,
         ]);
     }
 
     public function cari(Request $request)
     {
-        $request->validate([
-            'hargarumah' => 'required',
-            'jarakpusatkota' => 'required',
-            'typerumah' => 'required',
-            'luastanah' => 'required',
-            'spesifikasirumah' => 'required',
-            'kepadatanpenduduk' => 'required',
-        ]);
+        // $request->validate([
+        //     'hargarumah' => 'required',
+        //     'jarakpusatkota' => 'required',
+        //     'typerumah' => 'required',
+        //     'luastanah' => 'required',
+        //     'spesifikasirumah' => 'required',
+        //     'kepadatanpenduduk' => 'required',
+        // ]);
+
+        //validate
+        $kriteria = kriteriaM::orderBy('ket', 'DESC');
+        foreach ($kriteria->get() as $k) {
+            $namakriteria = str_replace(" ","", strtolower($k->namakriteria));
+            $request->validate([
+                $namakriteria => 'required',
+            ]);
+        }
         
-        $dataharga = nilaiM::where('idkriteria', 1)->orderBy('ket', 'asc')->get();
+        
+        //cek nominal
+        $kurensi = $kriteria->where('typedata', 'kurensi')->first()->idkriteria;
+        $dataharga = nilaiM::where('idkriteria', $kurensi)->orderBy('ket', 'asc')->get();
         $nilaiminharga = 500000000000;
         foreach ($dataharga as $item) {
             if($nilaiminharga > $item->ket) {
@@ -85,264 +100,271 @@ class indexC extends Controller
             }
         }
 
+
         $ceekinstansi = instansiM::join('perumahan','perumahan.idinstansi', '=','instansi.idinstansi')->count();
         if($ceekinstansi == 0) {
             return redirect()->back()->with('warning','Maaf, Data instansi belum ditambahkan')->withInput();
         }
 
-        $request_hargarumah = $request->hargarumah;
+        //---------------------------------------------
+        $kriteria = kriteriaM::orderBy('ket', 'DESC');
 
-        if($request_hargarumah < $nilaiminharga) {
-            return redirect('welcome#pencarian')->with('toast_error', 'Harga Rumah tidak valid');
+        foreach ($kriteria->get() as $k) {
+            // $request_hargarumah = $request->hargarumah;
+            $namakriteria = str_replace(" ","", strtolower($k->namakriteria));
+            if($k->typedata == 'kurensi') {
+                if($request->$namakriteria < $nilaiminharga) {
+                    return redirect('welcome#pencarian')->with('toast_error', 'Harga Rumah tidak valid');
+                }
+            }
+
+            //tampung data;
+            ${$namakriteria} = [];
+
+
+            if($k->ket == 'dinamis') {
+                $ambilData = nilaiM::select('ket')->where('idkriteria', $k->idkriteria)->get();
+                
+                
+                foreach ($ambilData as $harga2) {
+                    // $hargaArr[] = (int)($harga2->ket); 
+                    // dd($namakriteria);
+                    ${"urutnilai_$namakriteria"}[] = (int)($harga2->ket); 
+                    rsort(${"urutnilai_$namakriteria"});
+                }
+            }
+            
+
+
         }
-
-        $request_jarakpusatkota = $request->jarakpusatkota;
-        $request_typerumah = $request->typerumah;
-        $request_luastanah = $request->luastanah;
-        $request_spesifikasirumah = $request->spesifikasirumah;
-        $request_kepadatanpenduduk = $request->kepadatanpenduduk;
-        //data tampung
-        $hargarumah = [];
-        $typerumah = [];
-        $luastanah = [];
-        $spesifikasirumah = [];
-        $kepadatanpenduduk = [];
-
-        $nilaiharga = [];
-        $harga = [];
-        $i = 1;
-        $instansi = instansiM::get();
-        $ambilHarga = nilaiM::select('ket')->where('idkriteria', 1)->get();
-        foreach ($ambilHarga as $harga2) {
-            $hargaArr[] = (int)($harga2->ket); 
-        }
-
-        $ambiljarak = nilaiM::select('ket')->where('idkriteria', 5)->get();
-        foreach ($ambiljarak as $jarak2) {
-            $jarakArr[] = (int)($jarak2->ket); 
-        }
-
         
-        rsort($jarakArr);
-        rsort($hargaArr);
 
+        $instansi = instansiM::get();
+        $penampungInstansi = [];
+        $penampungRumah = [];
         $index = 0;
         foreach ($instansi as $instansi_) {
+            $penampungInstansi[] = $instansi_->namainstansi;
+            
             $perumahan = perumahanM::where('idinstansi', $instansi_->idinstansi)->get();
-            foreach ($perumahan as $perumahan_) {
-                
-                
-                //HARGA RUMAH
-                $hargaArrTutup = 0;
-                foreach ($hargaArr as $harga_) {
-                    if(($perumahan_->hargarumah > $harga_ && $request_hargarumah >= $perumahan_->hargarumah) && $hargaArrTutup == 0) {
-                        $hargarumah[] =  nilaiM::where('ket', $harga_)->first()->nilai;
-                        $hargaArrTutup++;
-                    }
-                }
-                if($hargaArrTutup === 0) {
-                    $hargarumah[] = 0;
-                }
+            
+            $ipr = 0;
+            foreach ($perumahan as $perumahan_) {    
+                $namaperumahan = str_replace(" ", "", strtolower($perumahan_->namaperumahan));    
+                $ipr++;
+                // dd($ipr++);
+                //---------------------------------------------
+                $kriteria = kriteriaM::orderBy('ket', 'DESC');
 
-                //TYPE RUMAH
-                if($perumahan_->typerumah == $request_typerumah) {
-                    $typerumah[] = nilaiM::where('idnilai', $perumahan_->typerumah)->first()->nilai;
-                }else {
-                    $typerumah[] = 0;
-                }
-                //LUAS TANAH
-                if($perumahan_->luastanah == $request_luastanah) {
-                    $luastanah[] = nilaiM::where('idnilai', $perumahan_->luastanah)->first()->nilai;
-                }else {
-                    $luastanah[] = 0;
-                }
-                //SPESIFIKASI RUMAH
-                if($perumahan_->spesifikasirumah == $request_spesifikasirumah) {
-                    $spesifikasirumah[] = nilaiM::where('idnilai', $perumahan_->spesifikasirumah)->first()->nilai;
-                }else{
-                    $spesifikasirumah[] = 0;
-                }
-                //KEPADATAN PENDUDUK
-                if($perumahan_->kepadatanpenduduk == $request_kepadatanpenduduk) {
-                    $kepadatanpenduduk[] = nilaiM::where('idnilai', $perumahan_->kepadatanpenduduk)->first()->nilai;
-                }else {
-                    $kepadatanpenduduk[] = 0;
-                }
+                foreach ($kriteria->get() as $k) {
+                    $idkriteria = $k->idkriteria;
+                    $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+                    $typedata = $k->typedata;
+                    $ket = $k->ket;
 
-                //JARAK PUSAT KOTA
-                $jarakArrTutup = 0;
-                foreach ($jarakArr as $jarak_) {
-                    if(($perumahan_->jarakpusatkota > $jarak_ && $request_jarakpusatkota >= $perumahan_->jarakpusatkota) && $jarakArrTutup == 0) {
-                        $jarakpusatkota[] =  nilaiM::where('ket', $jarak_)->first()->nilai;
-                        $jarakArrTutup++;
+                    if($ket == 'dinamis') {
+                        ${"dinamis_$namakriteria"} = 0;
+                        foreach (${"urutnilai_$namakriteria"} as $item) {
+                            if(($perumahan_->$namakriteria > $item && $request->$namakriteria >= $perumahan_->$namakriteria) && ${"dinamis_$namakriteria"} == 0) {
+                                ${$namakriteria}[] =  empty(nilaiM::where('ket', $item)->first()->nilai)?0:nilaiM::where('ket', $item)->first()->nilai;
+                                ${"dinamis_$namakriteria"}++;
+                            }
+                        }
+                        if(${"dinamis_$namakriteria"} === 0) {
+                            ${$namakriteria}[] = 0;
+                        }
+                    }else if($ket == 'statis') {
+                        if($perumahan_->$namakriteria == $request->$namakriteria) {
+                            ${$namakriteria}[] = empty(nilaiM::where('idnilai', $perumahan_->$namakriteria)->first()->nilai)?0:nilaiM::where('idnilai', $perumahan_->$namakriteria)->first()->nilai;
+                        }else {
+                            ${$namakriteria}[] = 0;
+                        }
                     }
-                }
-                if($jarakArrTutup === 0) {
-                    $jarakpusatkota[] = 0;
+
+                
                 }
 
                 //DATA INSTANSI
                 $dataInstansi[$index]['namainstansi'] = $instansi_->namainstansi;  
                 $dataInstansi[$index]['gambar'] = $instansi_->gambar;  
+                $dataInstansi[$index]['links'] = $instansi_->links;  
                 $dataInstansi[$index]['alamat'] = $instansi_->alamat;  
                 $dataInstansi[$index]['hp'] = $instansi_->hp;  
                 $dataInstansi[$index]['perumahan'] = $perumahan_->namaperumahan;  
 
                 $index++;
             }
+            $penampungRumah[] = $ipr;
+            $ipr =0;
         }
 
-        for ($i=0; $i < count($dataInstansi); $i++) { 
-            //min, max, selisih harga
-            $hargarumahManipulasi = $hargarumah;
-            rsort($hargarumahManipulasi);
-            $maxhargarumah = $hargarumahManipulasi[0];
-            sort($hargarumahManipulasi);
-            $minhargarumah = $hargarumahManipulasi[0];
-            $selisihhargarumah = $maxhargarumah - $minhargarumah;
-            //pembagian selisih hargarumah
-            $bobot = kriteriaM::where('idkriteria', 1)->first()->bobot;
-            if($selisihhargarumah != 0) {
-                $tampung = $hargarumah[$i] / $selisihhargarumah * $bobot;
-                //tampung baru
-                $hargarumah[$i] = $tampung;
-            }else {
-                $tampung = 0;
-            }
 
+        $kriteria = kriteriaM::orderBy('ket', 'DESC');
 
-            //min, max, selisih harga
-            $typerumahManipulasi = $typerumah;
-            rsort($typerumahManipulasi);
-            $maxtyperumah = $typerumahManipulasi[0];
-            sort($typerumahManipulasi);
-            $mintyperumah = $typerumahManipulasi[0];
-            $selisihtyperumah = $maxtyperumah - $mintyperumah;
-            //pembagian selisih typerumah
-            $bobot = kriteriaM::where('idkriteria', 2)->first()->bobot;
-
-            if($selisihtyperumah != 0) {
-                $tampung = $typerumah[$i] / $selisihtyperumah * $bobot;
-                //tampung baru
-                $typerumah[$i] = $tampung;
-            }else {
-                $tampung = 0;
-            }
-
-            
-
-            //min, max, selisih harga
-            $luastanahManipulasi = $luastanah;
-            rsort($luastanahManipulasi);
-            $maxluastanah = $luastanahManipulasi[0];
-            sort($luastanahManipulasi);
-            $minluastanah = $luastanahManipulasi[0];
-            $selisihluastanah = $maxluastanah - $minluastanah;
-            //pembagian selisih luastanah
-            $bobot = kriteriaM::where('idkriteria', 3)->first()->bobot;
-            if($selisihluastanah != 0) {
-                $tampung = $luastanah[$i] / $selisihluastanah * $bobot;
-                //tampung baru
-                $luastanah[$i] = $tampung;
-            }else {
-                $tampung = 0;
-            }
-
-
-            //min, max, selisih harga
-            $spesifikasirumahManipulasi = $spesifikasirumah;
-            rsort($spesifikasirumahManipulasi);
-            $maxspesifikasirumah = $spesifikasirumahManipulasi[0];
-            sort($spesifikasirumahManipulasi);
-            $minspesifikasirumah = $spesifikasirumahManipulasi[0];
-            $selisihspesifikasirumah = $maxspesifikasirumah - $minspesifikasirumah;
-            //pembagian selisih spesifikasirumah
-            $bobot = kriteriaM::where('idkriteria', 4)->first()->bobot;
-            if($selisihspesifikasirumah != 0) {
-                $tampung = $spesifikasirumah[$i] / $selisihspesifikasirumah * $bobot;
-                //tampung baru
-                $spesifikasirumah[$i] = $tampung;
-            }else {
-                $tampung = 0;
-            }
-
-
-            //min, max, selisih harga
-            $jarakpusatkotaManipulasi = $jarakpusatkota;
-            rsort($jarakpusatkotaManipulasi);
-            $maxjarakpusatkota = $jarakpusatkotaManipulasi[0];
-            sort($jarakpusatkotaManipulasi);
-            $minjarakpusatkota = $jarakpusatkotaManipulasi[0];
-            $selisihjarakpusatkota = $maxjarakpusatkota - $minjarakpusatkota;
-            //pembagian selisih jarakpusatkota
-            $bobot = kriteriaM::where('idkriteria', 5)->first()->bobot;
-            if($selisihjarakpusatkota != 0) {
-                $tampung = $jarakpusatkota[$i] / $selisihjarakpusatkota * $bobot;
-                //tampung baru
-                $jarakpusatkota[$i] = $tampung;
-            }else {
-                $tampung = 0;
-            }
-
-            //min, max, selisih harga
-            $kepadatanpendudukManipulasi = $kepadatanpenduduk;
-            rsort($kepadatanpendudukManipulasi);
-            $maxkepadatanpenduduk = $kepadatanpendudukManipulasi[0];
-            sort($kepadatanpendudukManipulasi);
-            $minkepadatanpenduduk = $kepadatanpendudukManipulasi[0];
-            $selisihkepadatanpenduduk = $maxkepadatanpenduduk - $minkepadatanpenduduk;
-            //pembagian selisih kepadatanpenduduk
-            $bobot = kriteriaM::where('idkriteria', 6)->first()->bobot;
-            if($selisihkepadatanpenduduk != 0) {
-                $tampung = $kepadatanpenduduk[$i] / $selisihkepadatanpenduduk * $bobot;
-                //tampung baru
-                $kepadatanpenduduk[$i] = $tampung;
-            }else {
-                $tampung = 0;
-            }
-
-
+        $penampungMatriks = [];
+        $nom = 0;
+        foreach ($kriteria->get() as $k) {
+            $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+            $penampungMatriks[$nom++] = ${$namakriteria}; 
+        
         }
 
         
+        // dd($penampungMatriks);
+        //--------------------------------------------------------
+        // dd($hargarumah);
+        // dd($dataInstansi);
 
-        $hasil = [];
+        $penampungMax = [];
+        $penampungMin = [];
+        $penampungSelisih = [];
+        $penampungMatriksNormalisasi = [];
+        $penampungMatriksBobot = [];
+
+
+        $penampungNamakriteria = [];
+        $penampungBobot = [];
+
+        $kriteria = kriteriaM::orderBy('ket', 'DESC');
+
+        foreach ($kriteria->get() as $k) {
+            $penampungNamakriteria[] = $k->namakriteria;
+            $penampungBobot[] = $k->bobot;
+        }
 
         for ($i=0; $i < count($dataInstansi); $i++) { 
-            $ambilnilai = $hargarumah[$i] + $typerumah[$i] +$luastanah[$i]+$spesifikasirumah[$i] + $jarakpusatkota[$i] + $kepadatanpenduduk[$i];
+            $kriteria = kriteriaM::orderBy('ket', 'DESC');
+
+            foreach ($kriteria->get() as $k) {
+                $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+
+                //min, max, selisih harga
+                ${"manipulasi_$namakriteria"} = ${$namakriteria};
+
+                rsort(${"manipulasi_$namakriteria"});
+                $max = ${"manipulasi_$namakriteria"}[0];
+                $penampungMax[$namakriteria] = $max;
+                
+                sort(${"manipulasi_$namakriteria"});
+                $min = ${"manipulasi_$namakriteria"}[0];
+                $penampungMin[$namakriteria] = $min;
+                
+                $selisih = $max - $min;
+                $penampungSelisih[$namakriteria] = $selisih;
+                //pembagian selisih hargarumah
+                $bobot = kriteriaM::where('idkriteria', $k->idkriteria)->first()->bobot;
+                
+                if($selisih != 0) {
+                    $normalisasi = ${$namakriteria}[$i] / $selisih;
+                    $tampung = (${$namakriteria}[$i] / $selisih) * $bobot;
+                    $penampungMatriksNormalisasi[$i][$namakriteria] = $normalisasi;
+                    //tampung baru
+                    ${"tampung_$namakriteria"}[$i] = $tampung;
+                    $penampungMatriksBobot[$i][$namakriteria] = ${"tampung_$namakriteria"}[$i];
+                }else {
+                    ${"tampung_$namakriteria"}[$i] = 0;
+                    $penampungMatriksNormalisasi[$i][$namakriteria] = 0;
+                    $penampungMatriksBobot[$i][$namakriteria] = 0;
+                }
+
+            }
+
+        }
+
+
+        $penampungHasilAkhir = [];
+        $hasil = [];
+        
+        for ($i=0; $i < count($dataInstansi); $i++) { 
+            $kriteria = kriteriaM::orderBy('ket', 'DESC');
+
+            $ambilnilai = 0 ;
+            foreach ($kriteria->get() as $k) {
+                $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+                // echo (float)(${"tampung_$namakriteria"}[$i])." ";
+                $tambahNilai = ${"tampung_$namakriteria"}[$i]; 
+                $ambilnilai = $ambilnilai + $tambahNilai;
+            }
+
+            // dd('stop');
             $hasil[$i]['nilai'] = $ambilnilai; 
             $hasil[$i]['namainstansi'] = $dataInstansi[$i]['namainstansi']; 
             $hasil[$i]['gambar'] = $dataInstansi[$i]['gambar']; 
+            $hasil[$i]['links'] = $dataInstansi[$i]['links']; 
             $hasil[$i]['alamat'] = $dataInstansi[$i]['alamat']; 
             $hasil[$i]['perumahan'] = $dataInstansi[$i]['perumahan']; 
             $hasil[$i]['hp'] = $dataInstansi[$i]['hp']; 
             
         }
+
+
+        $hasilSementara = $hasil;
+        // dd($hasilnormalisasi);
+
         rsort($hasil);
+        // dd($hasilnormalisasi);
+
+        $penampungHasilSementara = [];
 
         $hasilUrut = [];
+        $hasilUrutTampung = [];
         $cekurut = [];
+        $nom = 0;
         for ($i=0; $i < count($hasil); $i++) { 
-            if(empty($hasilUrut)) {
-                $hasilUrut[$i]['nilai'] = $hasil[$i]['nilai'];
-                $hasilUrut[$i]['namainstansi'] = $hasil[$i]['namainstansi'];
-                $hasilUrut[$i]['gambar'] = $hasil[$i]['gambar'];
-                $hasilUrut[$i]['alamat'] = $hasil[$i]['alamat'];
-                $hasilUrut[$i]['hp'] = $hasil[$i]['hp'];
+            if(empty($cekurut)) {
                 $cekurut[] = $hasil[$i]['namainstansi'];
+
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['namainstansi'] = $hasil[$i]['namainstansi'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['perumahan'] = $hasil[$i]['perumahan'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['gambar'] = $hasil[$i]['gambar'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['links'] = $hasil[$i]['links'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['alamat'] = $hasil[$i]['alamat'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['hp'] = $hasil[$i]['hp'];
             }
             if(in_array($hasil[$i]['namainstansi'], $cekurut)) {    
             }else {
-                $hasilUrut[$i]['nilai'] = $hasil[$i]['nilai'];
-                $hasilUrut[$i]['namainstansi'] = $hasil[$i]['namainstansi'];
-                $hasilUrut[$i]['gambar'] = $hasil[$i]['gambar'];
-                $hasilUrut[$i]['alamat'] = $hasil[$i]['alamat'];
-                $hasilUrut[$i]['hp'] = $hasil[$i]['hp'];
                 $cekurut[] = $hasil[$i]['namainstansi'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['namainstansi'] = $hasil[$i]['namainstansi'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['perumahan'] = $hasil[$i]['perumahan'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['gambar'] = $hasil[$i]['gambar'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['links'] = $hasil[$i]['links'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['alamat'] = $hasil[$i]['alamat'];
+                $hasilUrutTampung[$hasil[$i]['namainstansi']]['hp'] = $hasil[$i]['hp'];
             }
 
         }
         
+        
+        // dd($hasilUrutTampung);
+
+        $nom = 0;
+        foreach ($cekurut as $cek) {
+            $icek = 0;
+            $nilaiKeseluruhan = 0;
+
+            for ($i=0; $i < count($hasil); $i++) { 
+                
+                if($hasil[$i]['namainstansi'] == $cek){
+                    $icek++;
+                    $nilaiKeseluruhan = $nilaiKeseluruhan + $hasil[$i]['nilai'];
+                }
+            }
+
+            $nilaiKeseluruhan = $nilaiKeseluruhan / $icek;
+            $hasilUrut[$nom]['nilai'] = $nilaiKeseluruhan;
+            $hasilUrut[$nom]['namainstansi'] = $hasilUrutTampung[$cek]['namainstansi'];
+            $hasilUrut[$nom]['perumahan'] = $hasilUrutTampung[$cek]['perumahan'];
+            $hasilUrut[$nom]['gambar'] = $hasilUrutTampung[$cek]['gambar'];
+            $hasilUrut[$nom]['links'] = $hasilUrutTampung[$cek]['links'];
+            $hasilUrut[$nom]['alamat'] = $hasilUrutTampung[$cek]['alamat'];
+            $hasilUrut[$nom]['hp'] = $hasilUrutTampung[$cek]['hp'];
+
+            $nom++;
+            $icek = 0;
+        }
+
+        // dd($cekurut);
+        // dd($hasilUrut);
         $open = true;
         $instansi = instansiM::get();
 
@@ -354,16 +376,16 @@ class indexC extends Controller
             }
         }
 
-        $typerumah = nilaiM::select('idnilai','ket')
-                     ->where('idkriteria', 2)->get();
-        $luastanah = nilaiM::select('idnilai','ket')
-        ->where('idkriteria', 3)->get();
+        // $typerumah = nilaiM::select('idnilai','ket')
+        //              ->where('idkriteria', 2)->get();
+        // $luastanah = nilaiM::select('idnilai','ket')
+        // ->where('idkriteria', 3)->get();
 
-        $spesifikasirumah = nilaiM::select('idnilai','ket')
-        ->where('idkriteria', 4)->get();
+        // $spesifikasirumah = nilaiM::select('idnilai','ket')
+        // ->where('idkriteria', 4)->get();
 
-        $kepadatanpenduduk = nilaiM::select('idnilai','ket')
-        ->where('idkriteria', 6)->get();
+        // $kepadatanpenduduk = nilaiM::select('idnilai','ket')
+        // ->where('idkriteria', 6)->get();
 
         if($request->session()->get('login') === true && $request->session()->get('posisi') === 'pengunjung') {
             laporanM::where('idpengunjung', $request->session()->get('idpengunjung'))->delete();
@@ -374,15 +396,23 @@ class indexC extends Controller
                 $tambah->gambar = $data['gambar'];
                 $tambah->nilai = $data['nilai'];
                 $tambah->namainstansi = $data['namainstansi'];
+                $tambah->links = $data['links'];
                 $tambah->alamat = $data['alamat'];
                 $tambah->hp = $data['hp'];
                 $tambah->save();
             }
 
         }
+        // dd(count($hasilSementara));
+        // dd(count($penampungMatriksNormalisasi));
+        // dd(count($penampungMatriks[0]));
 
+        $kriteria = kriteriaM::orderBy('ket', 'DESC')->get();
+
+        $in = instansiM::get();
         return view('pages.pagesindex', [
             'instansi' => $instansi,
+            'in' => $in,
             'nilaimin' => $nilaimin,
             'typerumah' => $typerumah,
             'luastanah' => $luastanah,
@@ -390,6 +420,25 @@ class indexC extends Controller
             'kepadatanpenduduk' => $kepadatanpenduduk,
             'open' => $open,
             'hasilUrut' => $hasilUrut,
+            'kriteria' => $kriteria,
+
+            //penampung
+            'penampungInstansi' => $penampungInstansi,
+            'penampungRumah' => $penampungRumah,
+            'penampungNamaKriteria' => $penampungNamakriteria,
+            'penampungBobot' => $penampungBobot,
+            'penampungMatriks' => $penampungMatriks,
+            'penampungMatriksNormalisasi' => $penampungMatriksNormalisasi,
+            'penampungMatriksBobot' => $penampungMatriksBobot,
+            'penampungMax' => $penampungMax,
+            'penampungMin' => $penampungMin,
+            'penampungSelisih' => $penampungSelisih,
+
+            //hasil
+            'hasilSementara' => $hasilSementara,
+            'hasilPengurutan' => $hasil,
+            'hasilUrut' => $hasilUrut,
+
         ]);
         
     }

@@ -43,6 +43,10 @@
                                 <input type="number" name="hp" id="" class="form-control">    
                             </div>  
                             <div class="form-group">
+                                <label for="">Links</label>
+                                <textarea name="links" id="" cols="30" rows="3" class="form-control"></textarea>
+                            </div>
+                            <div class="form-group">
                                 <label for="">Gambar</label>
                                 <input type="file" name="gambar" id="" class="form-control">    
                             </div>                    
@@ -80,6 +84,7 @@
                         <th>Gambar/Logo</th>
                         <th>Nama Instansi</th>
                         <th>Alamat</th>
+                        <th>Link</th>
                         <th>No HP</th>
                         <th>Jml.P</th>
                         <th>Perumahan</th>
@@ -96,6 +101,9 @@
                         </td>
                         <td class="text-bold">{{$item->namainstansi}}</td>
                         <td>{{$item->alamat}}</td>
+                        <td>
+                            <a href="{{$item->links}}" class="btn btn-xs btn-info" target="_blank">Links</a>
+                        </td>
                         <td>{{$item->hp}}</td>
                         <td class="text-center">
                             @php
@@ -147,6 +155,10 @@
                                         <div class="form-group">
                                             <label for="">No Hp</label>
                                             <input type="number" value="{{$item->hp}}" name="hp" id="" class="form-control">    
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="">Links</label>
+                                            <textarea name="links" id="" cols="30" rows="3" class="form-control">{{$item->links}}</textarea>
                                         </div>
                                         <div class="form-group">
                                             <label for="">Gambar</label>

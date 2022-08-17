@@ -29,6 +29,11 @@ Route::post('login', 'loginC@proses')->name('proses.login');
 Route::get('daftar', 'loginC@daftar');
 Route::post('daftar', 'loginC@prosesdaftar')->name('proses.daftar');
 
+Route::get('reset', 'loginC@reset');
+Route::post('reset', 'loginC@datareset')->name('reset.data');
+Route::post('reset/password/{id}', 'loginC@resetpassword')->name('reset.password');
+// Route::post('reset//', 'loginC@daftar');
+
 
 
 Route::middleware(['GerbangAdmin'])->group(function () {
@@ -37,11 +42,15 @@ Route::middleware(['GerbangAdmin'])->group(function () {
     
     //kriteria
     Route::get('kriteria', 'konfigurasiC@kriteria');
-    Route::post('kriteria/{idkriteria}', 'konfigurasiC@ubahkriteria')->name('ubah.kriteria');
+    Route::post('kriteria/tambah', 'konfigurasiC@tambahkriteria')->name('tambah.kriteria');
+    Route::put('kriteria/ubah/{idkriteria}', 'konfigurasiC@ubahkriteria')->name('ubah.kriteria');
+    Route::DELETE('kriteria/hapus/{idkriteria}', 'konfigurasiC@hapuskriteria')->name('hapus.kriteria');
     
     //nilai
     Route::get('nilai', 'konfigurasiC@nilai');
-    Route::post('nilai/{idnilai}', 'konfigurasiC@ubahnilai')->name('ubah.nilai');
+    Route::post('nilai/tambah/{idkriteria}', 'konfigurasiC@tambahnilai')->name('tambah.nilai');
+    Route::delete('nilai/hapus/{idnilai}', 'konfigurasiC@hapusnilai')->name('hapus.nilai');
+    Route::post('nilai/ubah/{idnilai}', 'konfigurasiC@ubahnilai')->name('ubah.nilai');
     
     //instansi
     Route::get('instansi', 'instansiC@index');

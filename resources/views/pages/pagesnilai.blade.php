@@ -54,12 +54,61 @@
     @foreach ($kriteria as $item)
         <div class="col-md-4">
             <div class="card">
-                <div class="card-header"><h5>{{strtoupper($item->namakriteria)}}</h5></div>
+                <div class="card-header"><h5><b>{{strtoupper($item->namakriteria)}}</b></h5>
+                    <button type="button" class="btn btn-secondary my-0 text-capitalize btn-xs" data-toggle="modal" data-target="#tambahnilai{{$item->idkriteria}}">
+                        Tambah {{ $item->namakriteria }}
+                    </button>
+
+                    <!-- Modal -->
+                    <div class="modal fade" id="tambahnilai{{$item->idkriteria}}" tabindex="-1" aria-labelledby="tambahnilai{{$item->idkriteria}}Label" aria-hidden="true">
+                        <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                            <h5 class="modal-title" id="tambahnilai{{$item->idkriteria}}Label" class="text-capitalize text-bold"><b>Tambah {{$item->namakriteria}}</b></h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                            </div>
+                            <form action="{{ route('tambah.nilai', [$item->idkriteria]) }}" method="post">
+                                @csrf
+                                <div class="modal-body">
+                                    @if ($item->typedata == 'angka' || $item->typedata == 'kurensi')
+                                    <div class="form-group">
+                                        <label for="">Nama Penilaian</label>
+                                        <input type="number" name="ket" id="" class="form-control" placeholder="Angka penilaian">
+                                    </div>
+                                    @elseif($item->typedata == 'huruf')
+                                    <div class="form-group">
+                                        <label for="">Nama Penilaian</label>
+                                        <input type="text" name="ket" id="" class="form-control" placeholder="Nama penilaian">
+                                    </div>
+                                    @endif
+                                    
+                                    <div class="form-group">
+                                        <label for="">Nilai</label>
+                                        <input type="number" name="nilai" id="" class="form-control" placeholder="masukan nilai">
+                                    </div>
+
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                    <button type="submit" class="btn btn-primary">Save changes</button>
+                                </div>
+                        </form>
+                        </div>
+                        </div>
+                    </div>
+
+                </div>
                 <div class="card-body">
                     @php
                         $datanilai = DB::table('nilai')->where('idkriteria', $item->idkriteria)
-                                 ->orderBy('nilai', 'ASC')->get();
-                    @endphp     
+                                 ->orderBy('nilai', 'ASC');
+                        $datanilaikeseluruhan = $datanilai->get();
+                    @endphp   
+
+
+                    
                     <table class="table table-sm table-striped table-bordered">
                         <thead>
                             <tr>
@@ -70,7 +119,7 @@
                         </thead>
 
                         <tbody>
-                            @foreach ($datanilai as $nilai)
+                            @foreach ($datanilaikeseluruhan as $nilai)
                                 <tr>
                                     <td class="">
                                         @php
@@ -93,49 +142,65 @@
 
                                     <td nowrap>
                                         <!-- Button trigger modal -->
-                                        <button type="button" class="btn btn-primary btn-xs" data-toggle="modal" data-target="#edit{{$nilai->idnilai}}">
+                                        <button type="button" class="btn btn-primary btn-xs d-inline" data-toggle="modal" data-target="#edit{{$nilai->idnilai}}">
                                           <i class="fa fa-edit d-inline"></i> Edit
                                         </button>
                                         
-                                        <!-- Modal -->
-                                        <div class="modal fade" id="edit{{$nilai->idnilai}}" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
-                                            <div class="modal-dialog" role="document">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Edit Nilai ({{$item->namakriteria}})</h5>
-                                                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span>
-                                                            </button>
-                                                    </div>
-                                                    
-                                                        @if (!($item->namakriteria=='Spesifikasi Rumah' || $item->namakriteria=='Kepadatan Penduduk'))
-                                                            {{$type = 'number'}}
-                                                        @else
-                                                            {{$type = 'text'}}
-                                                        @endif
-                                                    <form action="{{ route('ubah.nilai', [$nilai->idnilai]) }}" method="post">
-                                                        @csrf
-                                                    
-                                                        <div class="modal-body">
-                                                            <div class="form-group">
-                                                                <label for="">Nama Penilaian</label>
-                                                                <input type="{{$type}}" class="form-control" name="ket" value="{{$nilai->ket}}" id="">
-                                                            </div>
-                                                            <div class="form-group">
-                                                                <label for="">Nilai</label>
-                                                                <input type="number" class="form-control" name="nilai" value="{{$nilai->nilai}}" id="">
-                                                            </div>
-                                                        </div>
-                                                        <div class="modal-footer">
-                                                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                                            <button type="submit" class="btn btn-primary">Ubah</button>
-                                                        </div>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        <form action="{{ route('hapus.nilai', [$nilai->idnilai]) }}" method="post" class="d-inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="btn btn-danger btn-xs">
+                                                <i class="fa fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        
                                     </td>
                                 </tr>
+
+
+                                <!-- Modal -->
+                                <div class="modal fade" id="edit{{$nilai->idnilai}}" tabindex="-1" role="dialog" aria-labelledby="modelTitleId" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Edit Nilai ({{$item->namakriteria}})</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                            </div>
+                                            
+                                                @if (!($item->namakriteria=='Spesifikasi Rumah' || $item->namakriteria=='Kepadatan Penduduk'))
+                                                    @php
+                                                        $type = 'number';
+                                                    
+                                                    @endphp
+                                                @else
+                                                    @php
+                                                        $type = 'text';
+                                                        
+                                                    @endphp
+                                                @endif
+                                            <form action="{{ route('ubah.nilai', [$nilai->idnilai]) }}" method="post">
+                                                @csrf
+                                            
+                                                <div class="modal-body">
+                                                    <div class="form-group">
+                                                        <label for="">Nama Penilaian</label>
+                                                        <input type="{{$type}}" class="form-control" name="ket" value="{{$nilai->ket}}" id="">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="">Nilai</label>
+                                                        <input type="number" class="form-control" name="nilai" value="{{$nilai->nilai}}" id="">
+                                                    </div>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                                                    <button type="submit" class="btn btn-primary">Ubah</button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
                             @endforeach
                         </tbody>
                     </table>

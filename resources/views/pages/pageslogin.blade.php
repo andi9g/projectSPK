@@ -23,32 +23,49 @@
                             <h3 class="font-weight-light">Login</h3>
                             <form class="pt-3" method="post" action="{{ route('proses.login', []) }}">
                                 @csrf
+
                                 <div class="form-group">
-                                    <input type="text" class="form-control form-control-lg" name="username" id="username" placeholder="Username...">
+                                    <input type="email" class="form-control form-control-lg @error('username')
+                                        is-invalid
+                                    @enderror" name="username" id="username" placeholder="Email">
                                 </div>
                                 <div class="form-group">
-                                    <input type="password" class="form-control form-control-lg" name="password" id="password" placeholder="Password">
+                                    <input type="password" class="form-control form-control-lg @error('password')
+                                        is-invalid
+                                    @enderror" name="password" id="password" placeholder="Password">
                                 </div>
                                 <div class="form-group">
-                                    <select name="posisi" class="form-control form-control-lg text-dark" id="">
+                                    <select name="posisi" class="form-control form-control-lg text-dark" id="posisi" style="background-color: rgb(226, 226, 226)" onchange="pilih(this)" onload="pilih(this)">
                                         {{-- <option value="">Pilih Posisi</option> --}}
                                         <option value="pengunjung">PENGUNJUNG</option>
                                         <option value="admin">ADMIN</option>
                                     </select>
                                 </div>
+
+                                <script>
+                                    function pilih(data) {
+                                        var posisi = data.value;
+                                        var username = document.getElementById('username');
+                                        if(posisi == 'admin') {
+                                            username.type='text';
+                                            username.placeholder='Masukan Username';
+                                        }else {
+                                            username.type='email';
+                                            username.placeholder='Masukan Email';
+                                        }
+                                    }
+                                </script>
+
                                 <div class="mt-3">
                                     <div class="row">
-                                        <div class="col-md-6">
-                                            <a href="{{ url('welcome', []) }}" class="btn my-1 w-100 btn-secondary">Halaman Utama</a>
-                                            
-                                        </div>
-                                        <div class="col-md-6 text-right my-1 justify-content-end align-content-end float-right" style="float: right !important">
+                                        <div class="col-md-12 text-right my-1 justify-content-end align-content-end float-right" style="float: right !important">
                                             <button type="submit" name="button" style="float: right !important" class="btn w-100 d-inline btn-block btn-primary btn-lg font-weight-medium auth-form-btn">Login</button>
                                         </div>
                                     </div>
                                 </div>
                             </form>
-                            <p class="mt-1">Belum punya akun? <a href="{{ url('daftar', []) }}" class="link-primary">Daftar disini</a>
+                            <a href="{{ url('welcome', []) }}" class="link-primary">Halaman Utama</a>
+                            <p class="mt-1">Belum punya akun? <a href="{{ url('daftar', []) }}" class="link-primary">Daftar disini</a> | <a href="{{ url('reset', []) }}" class="link-primary">Lupa password</a>
                             </p>
                         </div>
                     </div>

@@ -19,23 +19,35 @@ class Spk extends Migration
         $kriteria = [
             [
                 'namakriteria' => 'Harga Rumah',
-                'bobot' => 0.3
+                'bobot' => 0.3,
+                'typedata' => 'kurensi',
+                'ket' => 'dinamis',
             ], [
                 
                 'namakriteria' => 'Type Rumah',
-                'bobot' => 0.15
+                'bobot' => 0.15,
+                'typedata' => 'angka',
+                'ket' => 'statis',
             ], [
                 'namakriteria' =>'Luas Tanah',
-                'bobot' => 0.15
+                'bobot' => 0.15,
+                'typedata' => 'angka',
+                'ket' => 'statis',
             ], [
                 'namakriteria' =>'Spesifikasi Rumah',
-                'bobot' => 0.2
+                'bobot' => 0.2,
+                'typedata' => 'huruf',
+                'ket' => 'statis',
             ], [
                 'namakriteria' =>'Jarak Pusat Kota',
-                'bobot' => 0.1
+                'bobot' => 0.1,
+                'typedata' => 'angka',
+                'ket' => 'dinamis',
             ], [
                 'namakriteria' =>'Kepadatan Penduduk',
-                'bobot' => 0.1
+                'bobot' => 0.1,
+                'typedata' => 'huruf',
+                'ket' => 'statis',
             ]
         ];
 
@@ -73,7 +85,9 @@ class Spk extends Migration
         Schema::create('kriteria', function (Blueprint $table) {
             $table->bigIncrements('idkriteria');
             $table->String('namakriteria')->unique();
-            $table->Float('bobot');
+            $table->float('bobot');
+            $table->enum('typedata', ['angka','huruf','kurensi']);
+            $table->enum('ket', ['statis','dinamis']);
             $table->timestamps();
         });
 
@@ -85,16 +99,35 @@ class Spk extends Migration
             $table->timestamps();
         });
 
-        
+        Schema::create('instansi', function (Blueprint $table) {
+            $table->bigIncrements('idinstansi');
+            $table->String('namainstansi');
+            $table->Text('alamat');
+            $table->char('hp');
+            $table->String('links')->nullable();
+            $table->String('gambar')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::create('perumahan', function (Blueprint $table) {
+            $table->bigIncrements('idperumahan');
+            $table->Integer('idinstansi');
+            $table->String('namaperumahan');
+            $table->timestamps();
+        });
         
         $id = 1;
         $nomor = 1;
         foreach ($kriteria as $item) {
-            
+            $ket = $item['ket'];
+            $nama_k = str_replace(" ", "", strtolower($item['namakriteria']));
+
             DB::table('kriteria')->insert([
                 'idkriteria' => $id,
                 'namakriteria' => $item['namakriteria'],
                 'bobot' => $item['bobot'],
+                'typedata' => $item['typedata'],
+                'ket' => $item['ket'],
             ]);
 
             if($item['namakriteria']=='Harga Rumah'){
@@ -162,30 +195,12 @@ class Spk extends Migration
             }
             $id++;
 
+            DB::statement("ALTER TABLE perumahan ADD $nama_k bigint");
+
         }
 
 
-        Schema::create('instansi', function (Blueprint $table) {
-            $table->bigIncrements('idinstansi');
-            $table->String('namainstansi');
-            $table->Text('alamat');
-            $table->char('hp');
-            $table->String('gambar')->nullable();
-            $table->timestamps();
-        });
-
-        Schema::create('perumahan', function (Blueprint $table) {
-            $table->bigIncrements('idperumahan');
-            $table->Integer('idinstansi');
-            $table->String('namaperumahan');
-            $table->bigInteger('hargarumah');
-            $table->bigInteger('typerumah');
-            $table->bigInteger('luastanah');
-            $table->bigInteger('spesifikasirumah');
-            $table->bigInteger('jarakpusatkota');
-            $table->bigInteger('kepadatanpenduduk');
-            $table->timestamps();
-        });
+        
 
         Schema::create('pengunjung', function (Blueprint $table) {
             $table->bigIncrements('idpengunjung');
@@ -206,9 +221,10 @@ class Spk extends Migration
         Schema::create('laporan', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->Integer('idpengunjung');
-            $table->Float('nilai');
+            $table->float('nilai');
             $table->String('namainstansi');
             $table->String('alamat');
+            $table->String('links');
             $table->String('hp');
             $table->String('gambar')->nullable();
             $table->timestamps();

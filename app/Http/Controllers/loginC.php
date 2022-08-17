@@ -123,6 +123,65 @@ class loginC extends Controller
 
     }
 
+
+    public function reset()
+    {
+        return view('pages.pagesreset');
+    }
+
+    public function datareset(Request $request)
+    {
+        $request->validate([
+            'username' => 'email|required',
+            'nama' => 'required',
+        ]);
+
+        try{
+            $username = $request->username;
+            $nama = $request->nama;
+
+            $pengunjung = pengunjungM::where('username', $username)->where('nama', $nama);
+
+            if($pengunjung->count() == 1) {
+                $idpengunjung = $pengunjung->first()->idpengunjung;
+
+                return view('pages.pagesresetpassword', [
+                    'idpengunjung' => $idpengunjung,
+                ]);
+
+            }else {
+                return redirect()->back()->with('warning', 'Tidak ada data yang ditemukan')->withInput();
+            }
+
+        }catch(\Throwable $th){
+            return redirect('/reset')->with('toast_error', 'Terjadi kesalahan');
+        }
+    }
+
+    public function resetpassword(Request $request, $idpengunjung)
+    {
+        $request->validate([
+            'password' => 'required',
+        ]);
+
+        try{
+            $password = Hash::make($request->password);
+            $update = pengunjungM::where('idpengunjung', $idpengunjung)->update([
+                'password' => $password,
+            ]);
+
+            if($update) {
+                return redirect('login')->with('success', 'password berhasil direset');
+            }
+        
+        }catch(\Throwable $th){
+            return redirect('/login')->with('toast_error', 'Terjadi kesalahan');
+        }
+    }
+
+
+
+
     /**
      * Show the form for creating a new resource.
      *

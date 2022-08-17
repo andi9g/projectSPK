@@ -30,6 +30,9 @@ class instansiC extends Controller
     public function perumahan(Request $request, $idinstansi)
     {
         
+        $kriteria = kriteriaM::orderBy('ket', 'DESC')->get();
+
+        // dd($kriteria);
         $typerumah = nilaiM::select('idnilai','ket')
                      ->where('idkriteria', 2)->get();
         $luastanah = nilaiM::select('idnilai','ket')
@@ -50,6 +53,7 @@ class instansiC extends Controller
 
         return view('pages.pagesperumahan', [
             'perumahan' => $perumahan,
+            'kriteria' => $kriteria,
             'instansi' => $instansi,
             'idinstansi' => $idinstansi,
             'typerumah' => $typerumah,
@@ -61,36 +65,27 @@ class instansiC extends Controller
 
     public function tambahperumahan(Request $request, $idinstansi)
     {
+        $kriteria = kriteriaM::get();
+        $validateku = [];
         $request->validate([
-            'namaperumahan' => 'required',
-            'hargarumah' => 'required',
-            'jarakpusatkota' => 'required',
-            'typerumah' => 'required',
-            'luastanah' => 'required',
-            'spesifikasirumah' => 'required',
-            'kepadatanpenduduk' => 'required',
+            "namaperumahan" => 'required',
         ]);
-        
-        
+        foreach ($kriteria as $k) {
+            $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+
+            $request->validate([
+                "$namakriteria" => 'required',
+            ]);
+        }        
         try{
-            
             $namaperumahan = $request->namaperumahan;
-            $hargarumah = $request->hargarumah;
-            $typerumah = $request->typerumah;
-            $luastanah = $request->luastanah;
-            $spesifikasirumah = $request->spesifikasirumah;
-            $jarakpusatkota = $request->jarakpusatkota;
-            $kepadatanpenduduk = $request->kepadatanpenduduk;
-        
             $store = new perumahanM;
             $store->idinstansi = $idinstansi;
             $store->namaperumahan = $namaperumahan;
-            $store->hargarumah = $hargarumah;
-            $store->typerumah = $typerumah;
-            $store->luastanah = $luastanah;
-            $store->spesifikasirumah = $spesifikasirumah;
-            $store->jarakpusatkota = $jarakpusatkota;
-            $store->kepadatanpenduduk = $kepadatanpenduduk;
+            foreach ($kriteria as $k) {
+                $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+                $store->$namakriteria = $request->$namakriteria;
+            }
             $store->save();
 
             if($store) {
@@ -105,40 +100,38 @@ class instansiC extends Controller
     public function ubahperumahan(Request $request, $idperumahan)
     {
         
+        $kriteria = kriteriaM::get();
+        $validateku = [];
         $request->validate([
-            'namaperumahan' => 'required',
-            'hargarumah' => 'required',
-            'jarakpusatkota' => 'required',
-            'typerumah' => 'required',
-            'luastanah' => 'required',
-            'spesifikasirumah' => 'required',
-            'kepadatanpenduduk' => 'required',
+            "namaperumahan" => 'required',
         ]);
+        foreach ($kriteria as $k) {
+            $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+
+            $request->validate([
+                "$namakriteria" => 'required',
+            ]);
+        } 
         
         
         
         try{
             $namaperumahan = $request->namaperumahan;
-            $hargarumah = $request->hargarumah;
-            $typerumah = $request->typerumah;
-            $luastanah = $request->luastanah;
-            $spesifikasirumah = $request->spesifikasirumah;
-            $jarakpusatkota = $request->jarakpusatkota;
-            $kepadatanpenduduk = $request->kepadatanpenduduk;
-        
+            
             $update = perumahanM::where('idperumahan', $idperumahan)->update([
                 "namaperumahan" => $namaperumahan,
-                "hargarumah" => $hargarumah,
-                "typerumah" => $typerumah,
-                "luastanah" => $luastanah,
-                "spesifikasirumah" => $spesifikasirumah,
-                "jarakpusatkota" => $jarakpusatkota,
-                "kepadatanpenduduk" => $kepadatanpenduduk
             ]);
 
-            if($update) {
-                return redirect()->back()->with('toast_success', 'success');
+            foreach ($kriteria as $k) {
+                $namakriteria = str_replace(" ", "", strtolower($k->namakriteria));
+
+                $update = perumahanM::where('idperumahan', $idperumahan)->update([
+                    "$namakriteria" => $request->$namakriteria,
+                ]);
             }
+
+            return redirect()->back()->with('toast_success', 'success');
+
         }catch(\Throwable $th){
             return redirect()->back()->with('toast_error', 'Terjadi kesalahan');
         }
@@ -176,6 +169,7 @@ class instansiC extends Controller
     {
         $request->validate([
             'namainstansi' => 'required',
+            'links' => 'required',
             'alamat' => 'required',
             'hp' => 'required|numeric',
         ]);
@@ -201,10 +195,12 @@ class instansiC extends Controller
             $alamat = $request->alamat;
             $hp = $request->hp;
             $namainstansi = $request->namainstansi;
+            $links = $request->links;
         
             $store = new instansiM;
             $store->namainstansi = $namainstansi;
             $store->alamat = $alamat;
+            $store->links = $links;
             $store->hp = $hp;
             $store->gambar = $fileName;
             $store->save();
@@ -252,6 +248,7 @@ class instansiC extends Controller
         $request->validate([
             'namainstansi' => 'required',
             'alamat' => 'required',
+            'links' => 'required',
             'hp' => 'required|numeric',
         ]);
         
@@ -259,6 +256,7 @@ class instansiC extends Controller
         try{
             $namainstansi = $request->namainstansi;
             $alamat = $request->alamat;
+            $links = $request->links;
             $hp = $request->hp;
 
             if ($request->hasFile('gambar')) {
@@ -273,6 +271,7 @@ class instansiC extends Controller
                     $update = instansiM::where('idinstansi', $idinstansi)->update([
                         'namainstansi' => $namainstansi,
                         'alamat' => $alamat,
+                        'links' => $links,
                         'hp' => $hp,
                         'gambar' => $fileName,
                     ]);
@@ -285,6 +284,7 @@ class instansiC extends Controller
                 $update = instansiM::where('idinstansi', $idinstansi)->update([
                     'namainstansi' => $namainstansi,
                     'alamat' => $alamat,
+                    'links' => $links,
                     'hp' => $hp,
                     'gambar' => $fileName,
                 ]);

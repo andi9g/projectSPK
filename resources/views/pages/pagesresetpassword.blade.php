@@ -5,7 +5,7 @@
     <!-- Required meta tags -->
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <title>Login</title>
+    <title>Reset Password</title>
     <link rel="stylesheet" href="{{ url('assets/vendors/ti-icons/css/themify-icons.css', []) }}">
     <link rel="stylesheet" href="{{ url('assets/vendors/base/vendor.bundle.base.css', []) }}">
     <link rel="stylesheet" href="{{ url('assets/css/style.css', []) }}">
@@ -20,45 +20,22 @@
                 <div class="row w-100 mx-0">
                     <div class="col-lg-4 mx-auto">
                         <div class="auth-form-light text-left py-5 px-4 px-sm-5">
-                            <h4 class="font-weight-light">DAFTAR AKUN PENGUNJUNG</h4>
-                            <form class="pt-3" method="post" action="{{ route('proses.daftar', []) }}">
+                            <h4 class="font-weight-light">MASUKAN PASSWORD BARU</h4>
+                            <form class="pt-3" method="post" action="{{ route('reset.password', [$idpengunjung]) }}">
                                 @csrf
                                 <div class="form-group">
-                                    <input type="email" class="form-control form-control-lg @error('username')
+                                    <input type="password" class="form-control form-control-lg @error('password')
                                         is-invalid
-                                    @enderror" name="username" id="username" value="{{old('username')}}" placeholder="Masukan Email">
-                                    @error('username')
+                                    @enderror" name="password" id="password" value="{{old('password')}}" placeholder="Password Baru">
+                                    @error('password')
                                         <div class="invalid-feedback">{{$message}}</div>
                                     @enderror
                                 </div>
-                                <div class="form-group">
-                                    <input type="text" class="form-control form-control-lg @error('nama')
-                                        is-invalid
-                                    @enderror" name="nama" id="nama" value="{{old('nama')}}" placeholder="Nama Lengkap">
-                                    @error('nama')
-                                        <div class="invalid-feedback">{{$message}}</div>
-                                    @enderror
-                                </div>
-                                <div class="form-group">
-                                    <input type="password" class="form-control form-control-lg @error('password1')
-                                        is-invalid
-                                    @enderror" name="password1" id="password" placeholder="Password">
-                                    @error('password1')
-                                        <div class="invalid-feedback">{{$message}}</div>
-                                    @enderror
-                                </div>
-                                <div class="form-group">
-                                    <input type="password" class="form-control form-control-lg @error('password2')
-                                        is-invalid
-                                    @enderror" name="password2" id="password" placeholder="Retype password">
-                                    @error('password2')
-                                        <div class="invalid-feedback">{{$message}}</div>
-                                    @enderror
-                                </div>
+                                
                                 <div class="mt-3">
                                     <div class="row">
                                         <div class="col-md-12 text-right my-1 justify-content-end align-content-end float-right" style="float: right !important">
-                                            <button type="submit" name="button" style="float: right !important" class="btn w-100 d-inline btn-block btn-success btn-lg font-weight-medium auth-form-btn">Daftar</button>
+                                            <button type="submit" name="button" style="float: right !important" class="btn w-100 d-inline btn-block btn-success btn-lg font-weight-medium auth-form-btn">Reset Password</button>
                                         </div>
                                     </div>
                                     
@@ -67,7 +44,8 @@
                                 </div>
                             </form>
                             <a href="{{ url('welcome', []) }}" class="link-primary">Halaman Utama</a>
-                            <p class="mt-1">Sudah punya Akun? <a href="{{ url('login', []) }}" class="link-primary">Login disini</a>
+                                            
+                            <p class="mt-1"> <a href="{{ url('login', []) }}" class="link-primary">Kembali ke halaman Login</a>
                             </p>
                         </div>
                     </div>

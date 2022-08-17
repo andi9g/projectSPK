@@ -34,56 +34,37 @@
                             <div class="form-group">
                                 <label for="">Nama Perumahan</label>
                                 <input type="text" name="namaperumahan" id="" class="form-control">    
-                            </div>                    
-                            <div class="form-group">
-                                <label for="">Harga Rumah</label>
-                                <input type="number" name="hargarumah" id="" class="form-control">
                             </div>
 
-                            <div class="form-group">
-                                <label for="">Jarak Pusat Kota (Km)</label>
-                                <input type="number" step="0.01" name="jarakpusatkota" id="" class="form-control">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="">Type Rumah</label>
-                                <select name="typerumah" id="" class="form-control">
-                                    <option value="">Pilih</option>
-                                    @foreach ($typerumah as $item)
-                                        <option value="{{$item->idnilai}}">Type {{$item->ket}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            @foreach ($kriteria as $k)
+                                @php
+                                    $idkriteria = $k->idkriteria;
+                                    $namakriteria = $k->namakriteria;
+                                    $nama_k = str_replace(" ", "", strtolower($k->namakriteria));
+                                    $typedata = $k->typedata;
+                                    $ket = $k->ket;
+                                @endphp
 
-                            <div class="form-group">
-                                <label for="">Luas Tanah</label>
-                                <select name="luastanah" id="" class="form-control">
-                                    <option value="">Pilih</option>
-                                    @foreach ($luastanah as $item)
-                                        <option value="{{$item->idnilai}}">{{$item->ket}} m<sup>2</sup></option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="">Spesifikasi Rumah</label>
-                                <select name="spesifikasirumah" id="" class="form-control">
-                                    <option value="">Pilih</option>
-                                    @foreach ($spesifikasirumah as $item)
-                                        <option value="{{$item->idnilai}}">{{$item->ket}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="">Kepadatan Penduduk</label>
-                                <select name="kepadatanpenduduk" id="" class="form-control">
-                                    <option value="">Pilih</option>
-                                    @foreach ($kepadatanpenduduk as $item)
-                                        <option value="{{$item->idnilai}}">{{$item->ket}}</option>
-                                    @endforeach
-                                </select>
-                            </div>
+                                @if ($ket == 'dinamis')
+                                    <div class="form-group">
+                                        <label for="">{{$namakriteria}}</label>
+                                        <input type="number" name="{{$nama_k}}" id="" class="form-control">
+                                    </div>    
+                                @elseif($ket == 'statis')
+                                @php
+                                    $pilihan = DB::table('nilai')->where('idkriteria', $idkriteria)->get();
+                                @endphp    
+                                    <div class="form-group">
+                                        <label for="">{{$namakriteria}}</label>
+                                        <select name="{{$nama_k}}" id="" required class="form-control">
+                                            <option value="">Pilih</option>
+                                            @foreach ($pilihan as $item)
+                                                <option value="{{$item->idnilai}}">{{$item->ket}}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                @endif
+                            @endforeach
         
                         </div>
                         <div class="modal-footer">
@@ -116,12 +97,9 @@
                     <tr>
                         <th>No</th>
                         <th>Nama Perumahan</th>
-                        <th>Harga Rumah</th>
-                        <th>Type Rumah</th>
-                        <th>Luas Tanah</th>
-                        <th>Spesifikasi Rumah</th>
-                        <th>Jarak Pusat Kota</th>
-                        <th>Kepadatan Penduduk</th>
+                        @foreach ($kriteria as $item)
+                        <th>{{$item->namakriteria}}</th>                            
+                        @endforeach
                         <th>Aksi</th>
                     </tr>
                 </thead>
@@ -131,18 +109,25 @@
                     <tr>
                         <td>{{$loop->iteration}}</td>
                         <td nowrap class="text-bold">{{$item->namaperumahan}}</td>
-                        <td>Rp{{number_format($item->hargarumah, 0,',','.')}}</td>
-                        @php
-                            $typerumahTampil = DB::table('nilai')->select('ket')->where('idnilai', $item->typerumah)->first()->ket;
-                            $luastanahTampil = DB::table('nilai')->select('ket')->where('idnilai', $item->luastanah)->first()->ket;
-                            $spesifikasirumahTampil = DB::table('nilai')->select('ket')->where('idnilai', $item->spesifikasirumah)->first()->ket;
-                            $kepadatanpendudukTampil = DB::table('nilai')->select('ket')->where('idnilai', $item->kepadatanpenduduk)->first()->ket;
-                        @endphp
-                        <td>{{"Type ".$typerumahTampil}}</td>
-                        <td>{{$luastanahTampil}} m<sup>2</sup></td>
-                        <td>{{$spesifikasirumahTampil}}</td>
-                        <td>{{$item->jarakpusatkota}} km</td>
-                        <td>{{$kepadatanpendudukTampil}}</td>
+                        @foreach ($kriteria as $k)
+                            @php
+                                $cek = str_replace(" ", "", strtolower($k->namakriteria));
+                                $dataperumahan = DB::table('perumahan')
+                                ->join('nilai', 'nilai.idnilai', '=', "perumahan.$cek")
+                                ->where('perumahan.idperumahan', $item->idperumahan);
+                            @endphp    
+                            @if ($k->ket == 'dinamis')
+                                <td>{{$item->$cek}}</td>
+                            @elseif($k->ket == 'statis')
+                                @if ($dataperumahan->count() == 1)
+                                    <td>{{$dataperumahan->first()->ket}}</td>
+                                @else
+                                    <td></td>
+                                @endif
+                                
+                            @endif
+
+                        @endforeach
                         <td nowrap>
                             <!-- Button trigger modal -->
                             <button type="button" class="btn btn-primary btn-xs d-inline" data-toggle="modal" data-target="#edit{{$item->idperumahan}}">
@@ -175,65 +160,40 @@
                                     <div class="modal-body">
                                         <div class="form-group">
                                             <label for="">Nama Perumahan</label>
-                                            <input type="text" value="{{$item->namaperumahan}}" name="namaperumahan"  id="" class="form-control">    
-                                        </div>                    
-                                        <div class="form-group">
-                                            <label for="">Harga Rumah</label>
-                                            <input type="number" value="{{$item->hargarumah}}" name="hargarumah" id="" class="form-control">
+                                            <input type="text" name="namaperumahan" value="{{$item->namaperumahan}}" id="" class="form-control">    
                                         </div>
             
-                                        <div class="form-group">
-                                            <label for="">Jarak Pusat Kota (Km)</label>
-                                            <input type="number" step="0.01" value="{{$item->jarakpusatkota}}" name="jarakpusatkota" id="" class="form-control">
-                                        </div>
-                                        
-                                        <div class="form-group">
-                                            <label for="">Type Rumah</label>
-                                            <select name="typerumah" id="" class="form-control">
-                                                <option value="">Pilih</option>
-                                                @foreach($typerumah as $item2)
-                                                    <option value="{{$item2->idnilai}}" @if ($item2->idnilai == $item->typerumah)
-                                                        selected
-                                                    @endif>Type {{$item2->ket}}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                        @foreach ($kriteria as $k)
+                                            @php
+                                                $idkriteria = $k->idkriteria;
+                                                $namakriteria = $k->namakriteria;
+                                                $nama_k = str_replace(" ", "", strtolower($k->namakriteria));
+                                                $typedata = $k->typedata;
+                                                $ket = $k->ket;
+                                            @endphp
             
-                                        <div class="form-group">
-                                            <label for="">Luas Tanah</label>
-                                            <select name="luastanah" id="" class="form-control">
-                                                <option value="">Pilih</option>
-                                                @foreach ($luastanah as $item2)
-                                                    <option value="{{$item2->idnilai}}" @if ($item2->idnilai == $item->luastanah)
-                                                        selected
-                                                    @endif>{{$item2->ket}} m<sup>2</sup></option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-            
-                                        <div class="form-group">
-                                            <label for="">Spesifikasi Rumah</label>
-                                            <select name="spesifikasirumah" id="" class="form-control">
-                                                <option value="">Pilih</option>
-                                                @foreach ($spesifikasirumah as $item2)
-                                                    <option value="{{$item2->idnilai}}" @if ($item2->idnilai == $item->spesifikasirumah)
-                                                        selected
-                                                    @endif>{{$item2->ket}}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
-            
-                                        <div class="form-group">
-                                            <label for="">Kepadatan Penduduk</label>
-                                            <select name="kepadatanpenduduk" id="" class="form-control">
-                                                <option value="">Pilih</option>
-                                                @foreach ($kepadatanpenduduk as $item2)
-                                                    <option value="{{$item2->idnilai}}" @if ($item2->idnilai == $item->kepadatanpenduduk)
-                                                        selected
-                                                    @endif>{{$item2->ket}}</option>
-                                                @endforeach
-                                            </select>
-                                        </div>
+                                            @if ($ket == 'dinamis')
+                                                <div class="form-group">
+                                                    <label for="">{{$namakriteria}}</label>
+                                                    <input type="number" name="{{$nama_k}}" id="" class="form-control" value="{{$item->$nama_k}}">
+                                                </div>    
+                                            @elseif($ket == 'statis')
+                                            @php
+                                                $pilihan = DB::table('nilai')->where('idkriteria', $idkriteria)->get();
+                                            @endphp    
+                                                <div class="form-group">
+                                                    <label for="">{{$namakriteria}}</label>
+                                                    <select name="{{$nama_k}}" id="" required class="form-control">
+                                                        <option value="">Pilih</option>
+                                                        @foreach ($pilihan as $item3)
+                                                            <option value="{{$item3->idnilai}}" @if ($item3->idnilai == $item->$nama_k)
+                                                                selected
+                                                            @endif>{{$item3->ket}}</option>
+                                                        @endforeach
+                                                    </select>
+                                                </div>
+                                            @endif
+                                        @endforeach
                     
                                     </div>
                                     <div class="modal-footer">
