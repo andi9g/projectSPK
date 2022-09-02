@@ -363,6 +363,7 @@ class indexC extends Controller
             $icek = 0;
         }
 
+        rsort($hasilUrut);
         // dd($cekurut);
         // dd($hasilUrut);
         $open = true;
@@ -406,7 +407,7 @@ class indexC extends Controller
         // dd(count($hasilSementara));
         // dd(count($penampungMatriksNormalisasi));
         // dd(count($penampungMatriks[0]));
-
+        // dd($hasilUrut);
         $kriteria = kriteriaM::orderBy('ket', 'DESC')->get();
 
         $in = instansiM::get();

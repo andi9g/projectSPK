@@ -37,7 +37,7 @@
                                 <div class="form-group">
                                     <select name="posisi" class="form-control form-control-lg text-dark" id="posisi" style="background-color: rgb(226, 226, 226)" onchange="pilih(this)" onload="pilih(this)">
                                         {{-- <option value="">Pilih Posisi</option> --}}
-                                        <option value="pengunjung">PENGUNJUNG</option>
+                                        {{-- <option value="pengunjung">PENGUNJUNG</option> --}}
                                         <option value="admin">ADMIN</option>
                                     </select>
                                 </div>
@@ -65,8 +65,8 @@
                                 </div>
                             </form>
                             <a href="{{ url('welcome', []) }}" class="link-primary">Halaman Utama</a>
-                            <p class="mt-1">Belum punya akun? <a href="{{ url('daftar', []) }}" class="link-primary">Daftar disini</a> | <a href="{{ url('reset', []) }}" class="link-primary">Lupa password</a>
-                            </p>
+                            {{-- <p class="mt-1">Belum punya akun? <a href="{{ url('daftar', []) }}" class="link-primary">Daftar disini</a> | <a href="{{ url('reset', []) }}" class="link-primary">Lupa password</a>
+                            </p> --}}
                         </div>
                     </div>
                 </div>

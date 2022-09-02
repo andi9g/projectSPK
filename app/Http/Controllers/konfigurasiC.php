@@ -14,8 +14,16 @@ class konfigurasiC extends Controller
     {
         $kriteria = kriteriaM::get();
 
+        $bobot = 0;
+        foreach ($kriteria as $item) {
+            $bobot = $bobot + $item->bobot;
+        }
+
+        $bobot = (int)($bobot * 100);
+
         return view('pages.pageskriteria', [
             'kriteria' => $kriteria,
+            'bobot' => $bobot,
         ]);
     }
 
@@ -30,6 +38,19 @@ class konfigurasiC extends Controller
         
         
         try{
+            $kriteria = kriteriaM::get();
+
+            $bobot = 0;
+            foreach ($kriteria as $item) {
+                $bobot = $bobot + $item->bobot;
+            }
+
+            $bobot = (int)(($bobot + ($request->bobot / 100)) * 100);
+
+            if($bobot > 100) {
+                return redirect()->back()->with('warning', 'Maaf pastikan bobot keseluruhan maksimal 100% <br> Total bobot <br> '.$bobot."%")->withInput();
+            }
+
             $namakriteria = ucwords($request->namakriteria);
             $bobot = $request->bobot / 100;
             $typedata = $request->typedata;
@@ -40,6 +61,7 @@ class konfigurasiC extends Controller
             $store->bobot = $bobot;
             $store->typedata = $typedata;
             $store->ket = $ket;
+            $store->satuan = $request->satuan;
             $store->save();
             if($store) {
                 $nama_k = str_replace(" ", "", strtolower($namakriteria));
@@ -60,10 +82,25 @@ class konfigurasiC extends Controller
         
         
         try{
+            $kriteria = kriteriaM::where('idkriteria', '!=', $idkriteria)->get();
+
+            
+            $bobot = 0;
+            foreach ($kriteria as $item) {
+                $bobot = $bobot + $item->bobot;
+            }
+
+            $bobot = (int)(($bobot + ($request->bobot / 100)) * 100);
+
+            if($bobot > 100) {
+                return redirect()->back()->with('warning', 'Maaf pastikan bobot keseluruhan maksimal 100% <br> Total bobot <br> '.$bobot."%")->withInput();
+            }
+
             $bobot = $request->bobot / 100;
         
             $update = kriteriaM::where('idkriteria', $idkriteria)->update([
                 'bobot' => $bobot,
+                'satuan' => $request->satuan,
             ]);
 
             if($update) {

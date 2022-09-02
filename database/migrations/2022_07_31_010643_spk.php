@@ -88,6 +88,7 @@ class Spk extends Migration
             $table->float('bobot');
             $table->enum('typedata', ['angka','huruf','kurensi']);
             $table->enum('ket', ['statis','dinamis']);
+            $table->String('satuan')->nullable();
             $table->timestamps();
         });
 

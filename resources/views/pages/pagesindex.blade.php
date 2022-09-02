@@ -172,6 +172,7 @@
                                             @php
                                                 $idkriteria = $k->idkriteria;
                                                 $namakriteria = $k->namakriteria;
+                                                $satuan = empty($k->satuan)?"": "(".$k->satuan.")";
                                                 $nama_k = str_replace(" ", "", strtolower($k->namakriteria));
                                                 $typedata = $k->typedata;
                                                 $ket = $k->ket;
@@ -179,7 +180,7 @@
             
                                             @if ($ket == 'dinamis')
                                                 <div class="form-group mb-4">
-                                                    <label for="" class=""><b>{{$namakriteria}}</b></label>
+                                                    <label for="" class=""><b>{{$namakriteria." "}} <?= htmlspecialchars_decode($satuan) ?></b></label>
                                                     <input required type="number" name="{{$nama_k}}" class="form-control @error($nama_k)
                                                         is-invalid
                                                     @enderror" value="{{old($nama_k)}}" @if ($k->typedata == 'kurensi')
@@ -230,7 +231,7 @@
                                                 $pilihan = DB::table('nilai')->where('idkriteria', $idkriteria)->get();
                                             @endphp    
                                                 <div class="form-group mb-4">
-                                                    <label for=""><b>{{$namakriteria}}</b></label>
+                                                    <label for=""><b>{{$namakriteria." "}} <?= htmlspecialchars_decode($satuan) ?></b></label>
                                                     <select name="{{$nama_k}}" id="" required class="form-control @error($nama_k)
                                                     is-invalid
                                                 @enderror">
@@ -274,10 +275,10 @@
 
                 <div class="row justify-content-center">
                     <div class="col-xl-10">
-                        <a href="{{ route('back.welcome', []) }}" class="btn btn-danger py-1 d-inline">Kembali</a>
+                        <a href="{{ route('back.welcome', []) }}" class="btn btn-danger d-inline">Kembali</a>
                         
                         <!-- Button trigger modal -->
-                        <button type="button" class="btn btn-success py-1 d-inline" data-bs-toggle="modal" data-bs-target="#perumahanAnalis">
+                        {{-- <button type="button" class="btn btn-success py-1 d-inline" data-bs-toggle="modal" data-bs-target="#perumahanAnalis">
                             Perumahan
                         </button>
                         
@@ -327,7 +328,7 @@
                                 </div>
                             </div>
                             </div>
-                        </div>
+                        </div> --}}
 
                         
 
@@ -610,11 +611,11 @@
                             </div>
                         </div>
                         
-                        <form action="{{ route('cetak.laporan') }}" class="d-inline" method="GET" target="_blank">
+                        {{-- <form action="{{ route('cetak.laporan') }}" class="d-inline" method="GET" target="_blank">
                             <button type="submit" class="btn btn-secondary my-2 py-1">Cetak Hasil Ranking</button>
-                        </form>
+                        </form> --}}
 
-                        <table class="table table-sm table-striped table-bordered bg-white">
+                        {{-- <table class="table table-sm table-striped table-bordered bg-white">
                             <thead>
                                 <th>No</th>
                                 <th>Gambar/Logo</th>
@@ -641,6 +642,97 @@
                                     
                                 @endforeach
                             </tbody>
+                        </table> --}}
+
+                        <table width="100%" class="table-bordered table-sm mt-2" border="0" style="border-collapse: collapse;font-family: 8pt">
+                                    
+                                        
+                            @foreach ($hasilUrut as $item)
+                            <tr>
+                                <th colspan="3" style="background: rgb(224, 224, 224)">
+                                    <table>
+                                        @for ($i = 0; $i < count($hasilUrut); $i++)
+                                        @if ($item['namainstansi'] == $hasilUrut[$i]["namainstansi"])
+                                        <tr>
+                                            <td rowspan="6" valign="top" class="p-2"><img src="{{ url('gambar/instansi', [$hasilUrut[$i]['gambar']]) }}" class="rounded border-1" width="140px" alt=""></td>
+                                            <td>PERINGKAT {{$loop->iteration}}</td>
+                                            <td></td>
+                                            <td></td>
+                                        </tr>
+                                        <tr>
+                                            <td>Nama Instansi</td>
+                                            <td>&nbsp;:&nbsp;</td>
+                                            <td>{{$hasilUrut[$i]["namainstansi"]}}</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td>Alamat</td>
+                                            <td>&nbsp;:&nbsp;</td>
+                                            <td>{{$hasilUrut[$i]["alamat"]}}</td>
+                                        </tr>
+
+                                        <tr>
+                                            <td>Nomor HP</td>
+                                            <td>&nbsp;:&nbsp;</td>
+                                            <td>{{$hasilUrut[$i]["hp"]}}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Links</td>
+                                            <td>&nbsp;:&nbsp;</td>
+                                            <td><a href="{{$hasilUrut[$i]['links']}}" class="links-primary" target="_blank">Google Map</a></td></td>
+                                        </tr>
+
+                                        <tr>
+                                            <td>Nilai Ranking</td>
+                                            <td>&nbsp;:&nbsp;</td>
+                                            <td>{{$hasilUrut[$i]["nilai"]}}</td>
+                                        </tr>
+                                            
+                                        @endif
+                                        @endfor
+                                    </table>
+                                </th>
+                            </tr>
+
+                            
+                            @php
+                                $no = 1;
+                                $noH = 0;
+                                $nilaiS = "";
+                                $nilaiH = 0;
+                            @endphp
+                            @for ($i = 0; $i < count($hasilPengurutan); $i++)
+                            @if ($item['namainstansi'] == $hasilPengurutan[$i]['namainstansi'])
+                                
+                            <tr>
+                                <td class="bg-light text-center" width="30px">{{$no++}}</td>
+                                <td class="bg-light">{{$hasilPengurutan[$i]['perumahan']}}</td>
+                                <td class="bg-light">{{$hasilPengurutan[$i]['nilai']}}</td>
+                                @php
+                                    $nilaiH = $nilaiH + $hasilPengurutan[$i]['nilai'];
+                                    $noH++;
+                                @endphp
+                            </tr>
+                                
+                            @endif
+                            @endfor
+                            
+                            <tr>
+                                <td colspan="2"><b>Nilai Ranking : (Jumlah Nilai Perumahan / Banyak Rumah)</b></td>
+                                <td><b><font color="blue">{{$nilaiH." / ".$noH}}</font> =  {{$nilaiH / $noH}}</b></td>
+                            </tr>
+
+                            <tr class="border-0">
+                                <td colspan="3" class="border-0">
+                                    <br>
+                                </td>
+                            </tr>
+                            
+                            @php
+                                $nilaiH = 0;
+                                $noH = 0;
+                            @endphp
+                            @endforeach
                         </table>
                     </div>
                 </div>
